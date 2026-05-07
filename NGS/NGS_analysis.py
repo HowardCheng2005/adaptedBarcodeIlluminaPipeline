@@ -20,9 +20,20 @@ def get_raw_reads_files(directory):
     # Get forward and reverse raw reads files in NextSeq2000_raw_reads directory.
     # TODO: Check naming for NextSeq files
 
-    dir = os.path.join(os.getcwd(), directory)
-    forward_raw_reads = get_files(dir, f"{directory}*R2*.fastq")
-    reverse_raw_reads = get_files(dir, f"{directory}*R1*.fastq")
+    forward_raw_reads = get_files(directory, f"*R1*.fastq.gz")
+    reverse_raw_reads = get_files(directory, f"*R2*.fastq.gz")
+
+    #Checks if R1/R2 files exist, and whether the amount of files between the two match
+    if (len(forward_raw_reads) != len(reverse_raw_reads)) or (len(forward_raw_reads) == 0) :
+        raise ValueError(f"R1/R2 amount of files different")
+
+    # checks is forward and reverse reads match
+    for (r1, r2) in zip(forward_raw_reads, reverse_raw_reads):
+        expected_r2 = os.path.basename(r1).replace("_R1_", "_R2_")
+        actual_r2 = os.path.basename(r2)
+
+        if expected_r2 != actual_r2:
+            raise ValueError(f"R1/R2 pairing error")
 
     return forward_raw_reads, reverse_raw_reads
 
@@ -50,7 +61,7 @@ def cutadapt(forward_raw_reads, reverse_raw_reads, forward_adaptor, reverse_adap
 
     # Log cutadapt path and version
     LOG.info(f"Cutadapt path: {subprocess.check_output(['which', 'cutadapt']).decode('utf-8').strip()}")
-    LOG.info(f"Cutadapt version: {subprocess.check_output([CUTADAPT_EXE, '--version']).decode('utf-8').strip()}")
+    LOG.info(f"Cutadapt version: {subprocess.check_output(['cutadapt', '--version']).decode('utf-8').strip()}")
 
     # Create output directory.
     out_dir = create_dir(os.getcwd(), "cutadapt")
@@ -69,7 +80,7 @@ def cutadapt(forward_raw_reads, reverse_raw_reads, forward_adaptor, reverse_adap
     LOG.info(f"Reverse output files:{reverse_cutadapt_files}")
 
     # Setup cutadapt commands and flags
-    cutadapt_commands = [[CUTADAPT_EXE] +
+    cutadapt_commands = [["cutadapt"] +
                          [f"-a", f"{forward_adaptor}...{reverse_adaptor}"] +
                          [f"-A", f"{rc(reverse_adaptor)}...{rc(forward_adaptor)}"] +
                          [f"-o", f"{forward_cutadapt_files[i]}"] +
@@ -106,7 +117,7 @@ def NGmerge(forward_cutadapt_reads, reverse_cutadapt_reads):
     LOG.info(f"Output directory: {out_dir}")
 
     # Create output file names.
-    merged_files = [os.path.join(out_dir, f.split("/")[-1].replace("R2_cutadapt.fastq", "merged.fastq"))
+    merged_files = [os.path.join(out_dir, f.split("/")[-1].replace("R1_001_cutadapt.fastq", "merged.fastq"))
                     for f in forward_cutadapt_reads]
     LOG.info(f"Output files: {merged_files}")
 
@@ -117,7 +128,7 @@ def NGmerge(forward_cutadapt_reads, reverse_cutadapt_reads):
         log_files.append(os.path.join(os.getcwd(), "logs", filename))
 
     # NGmerge commands.
-    NGmerge_commands = [[NGMERGE_EXE] +
+    NGmerge_commands = [["NGmerge"] +
         ["-b", "-j", log_files[i]] +
         # ["-p", "0"] + TODO: See if need this parameter to remove all mismatched sequences
         ["-1", f"{forward_cutadapt_reads[i]}"] +
@@ -161,7 +172,7 @@ def quality_filter(merged_reads):
     LOG.info(f"Output files: {filtered_reads}")
 
     # NGmerge commands.
-    quality_filter_commands = [[FASTP_EXE] +
+    quality_filter_commands = [["fastp"] +
         ["-i", f"{merged_reads[i]}"] +
         ["-o", f"{filtered_reads[i]}"] +
         ["-l", f"{LENGTH}"] +
@@ -213,8 +224,11 @@ if __name__ == "__main__":
                                                  "NGS data")
 
     # Required arguments
-    parser.add_argument('-d', required=True, help="Directory of input data")
-    parser.add_argument('-p', required=True, help="Pathway to NGS libraries")
+    # UPDATED: USES PATH TO DIRECTORY INSTEAD OF NAME OF DIRECTORY
+    # note: make sure that the library and maxiprep reads are in different folders
+    parser.add_argument('-d', required=True, help="Directory pathway for input data")
+    # Pathway should not be used due to conda environment
+    parser.add_argument('-p', required=False, help="Pathway to NGS libraries")
     parser.add_argument('-t', required=False, default=3, help="Threads to run the program, deafult is 3")
     parser.add_argument('-q', required=False, default=15, help="Quality Threshold")
     parser.add_argument('-f', required=True, help="Forward Primer")
@@ -228,10 +242,10 @@ if __name__ == "__main__":
     THREADS = args.t
     LOG = create_log(STATUS)
 
-    # Pathways
-    CUTADAPT_EXE = f"{args.p}/cutadapt"
-    NGMERGE_EXE = f"{args.p}/NGmerge"
-    FASTP_EXE = f"{args.p}/fastp"
+    # Pathways (ngs libraries already downloaded via conda)
+    # CUTADAPT_EXE = f"{args.p}/cutadapt"
+    # NGMERGE_EXE = f"{args.p}/NGmerge"
+    # FASTP_EXE = f"{args.p}/fastp"
 
     # Quality Filtering Parameters
     # TODO: Quality filtering parameters will differ based on experimental data
