@@ -1,5 +1,5 @@
 """
-This file contains all functions related to managing fiels and durectories for the pipeline
+This file contains all functions related to managing fields and durectories for the pipeline
 """
 
 import glob
@@ -8,25 +8,26 @@ import os
 from datetime import datetime
 
 
-def create_log(status):
+def create_log(status, directory="."):
     """
     Create log file in logs directory.
     :param status: if True, create log file with current date and time; else create test.log
     :return: logger object
     """
-    if not os.path.exists(os.path.join(os.getcwd(), "logs")):
-        os.mkdir("logs")
+
+    logs_dir = os.path.join(directory, "logs")
+    os.makedirs(logs_dir, exist_ok=True)
 
     if status:
         logger = logging.getLogger(__name__)
-        log_filename = os.path.join(os.getcwd(), "logs", datetime.now().strftime(f"%Y-%m-%d_%H:%M_{__file__.split('/')[-1]}.log"))
+        log_filename = os.path.join(logs_dir, datetime.now().strftime(f"%Y-%m-%d_%H:%M_{__file__.split('/')[-1]}.log"))
         logging.basicConfig(filename=log_filename,
                             format='%(asctime)s - %(levelname)s - %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S',
                             level=logging.INFO)
     else:
         logger = logging.getLogger(__name__)
-        log_filename = os.path.join(os.getcwd(), "logs", datetime.now().strftime("test.log"))
+        log_filename = os.path.join(logs_dir, datetime.now().strftime("test.log"))
         logging.basicConfig(filename=log_filename,
                             format='%(asctime)s - [%(filename)s] - %(levelname)s - %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S',

@@ -60,28 +60,32 @@ def get_proportions(files):
 
 if __name__ == "__main__":
     STATUS = 1
-    SEQKIT_EXE = "/Users/r.fu/opt/anaconda3/envs/barcodedDMS/bin/seqkit"
+    SEQKIT_EXE = "seqkit"
 
     # Specify random state
     # Ask user to specify random state using argparse with the flag --random_state
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', "--random_state", type=int, help="Random state used for sampling in SeqKit")
+    parser.add_argument('-i', "--input_dir", type=str, required=True, help="Directory pathway for input data")
+    parser.add_argument('-o', "--output_dir", type=str, required=True, help="Directory pathway for output data")
     args = parser.parse_args()
     random_state = args.random_state
+    input_dir = args.input_dir
+    output_dir = args.output_dir
 
     # Create log file
-    logger = create_log(random_state)
+    logger = create_log(random_state, output_dir)
 
     # Set input directory
-    in_dir = os.path.join(os.getcwd(), "Quality_Fitered")
+    in_dir = os.path.join(input_dir, "Quality_Filtered")
     logger.info(f"Input directory: {in_dir}")
 
     # Get input files
-    dir = os.path.join(os.getcwd(), "Quality_Filtered")
+    dir = os.path.join(input_dir, "Quality_Filtered")
     input_files = get_files(dir, "*_quality_merged.fastq")
 
     # Set output directory
-    out_root_dir = create_dir(os.getcwd(), "downsample_outputs")
+    out_root_dir = create_dir(output_dir, "downsample_outputs")
     out_dir = create_dir(out_root_dir, f"downsample_{random_state}")
     logger.info(f"Output directory: {out_dir}")
 

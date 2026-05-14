@@ -64,7 +64,7 @@ def cutadapt(forward_raw_reads, reverse_raw_reads, forward_adaptor, reverse_adap
     LOG.info(f"Cutadapt version: {subprocess.check_output(['cutadapt', '--version']).decode('utf-8').strip()}")
 
     # Create output directory.
-    out_dir = create_dir(os.getcwd(), "cutadapt")
+    out_dir = create_dir(OUTPUT, "cutadapt")
     LOG.info(f"Output directory: {out_dir}")
 
     # Create forward file names.
@@ -81,6 +81,7 @@ def cutadapt(forward_raw_reads, reverse_raw_reads, forward_adaptor, reverse_adap
 
     # Setup cutadapt commands and flags
     cutadapt_commands = [["cutadapt"] +
+                         ["-j", f"{THREADS}"] +
                          [f"-a", f"{forward_adaptor}...{reverse_adaptor}"] +
                          [f"-A", f"{rc(reverse_adaptor)}...{rc(forward_adaptor)}"] +
                          [f"-o", f"{forward_cutadapt_files[i]}"] +
@@ -113,7 +114,7 @@ def NGmerge(forward_cutadapt_reads, reverse_cutadapt_reads):
     LOG.info("Start NGmerge...")
 
     # Set output directory.
-    out_dir = create_dir(os.getcwd(), "NGmerge")
+    out_dir = create_dir(OUTPUT, "NGmerge")
     LOG.info(f"Output directory: {out_dir}")
 
     # Create output file names.
@@ -125,11 +126,12 @@ def NGmerge(forward_cutadapt_reads, reverse_cutadapt_reads):
     log_files = []
     for i in range(len(merged_files)):
         filename = merged_files[i].split("/")[-1].replace("merged.fastq", "mismatch.log")
-        log_files.append(os.path.join(os.getcwd(), "logs", filename))
+        log_files.append(os.path.join(OUTPUT, "logs", filename))
 
     # NGmerge commands.
     NGmerge_commands = [["NGmerge"] +
-        ["-b", "-j", log_files[i]] +
+        ["-n", f"{THREADS}"] +
+        ["-j", log_files[i]] + #note: removed "-n" for current conda environment
         # ["-p", "0"] + TODO: See if need this parameter to remove all mismatched sequences
         ["-1", f"{forward_cutadapt_reads[i]}"] +
         ["-2", f"{reverse_cutadapt_reads[i]}"] +
@@ -163,7 +165,7 @@ def quality_filter(merged_reads):
     LOG.info("Start Quality Filtering...")
 
     # Set output directory.
-    out_dir = create_dir(os.getcwd(), "Quality_Filtered")
+    out_dir = create_dir(OUTPUT, "Quality_Filtered")
     LOG.info(f"Output directory: {out_dir}")
 
     # Create output file names.
@@ -173,6 +175,7 @@ def quality_filter(merged_reads):
 
     # NGmerge commands.
     quality_filter_commands = [["fastp"] +
+        ["-w", f"{THREADS}"] +
         ["-i", f"{merged_reads[i]}"] +
         ["-o", f"{filtered_reads[i]}"] +
         ["-l", f"{LENGTH}"] +
@@ -229,18 +232,22 @@ if __name__ == "__main__":
     parser.add_argument('-d', required=True, help="Directory pathway for input data")
     # Pathway should not be used due to conda environment
     parser.add_argument('-p', required=False, help="Pathway to NGS libraries")
-    parser.add_argument('-t', required=False, default=3, help="Threads to run the program, deafult is 3")
-    parser.add_argument('-q', required=False, default=15, help="Quality Threshold")
+    parser.add_argument('-t', required=False, default=3, type=int, help="Threads to run the program, default is 3")
+    parser.add_argument('-q', required=False, default=15, type=int, help="Quality Threshold")
     parser.add_argument('-f', required=True, help="Forward Primer")
     parser.add_argument('-r', required=True, help="Reverse Primer")
+    parser.add_argument('-o', required=True, help="Output directory")
 
     args = parser.parse_args()
+
+    # NEW: set output
+    OUTPUT = args.o
 
     # Set Status, Random, Logfile for testing purposes.
     STATUS = 0
     DIR = args.d
     THREADS = args.t
-    LOG = create_log(STATUS)
+    LOG = create_log(STATUS, OUTPUT)
 
     # Pathways (ngs libraries already downloaded via conda)
     # CUTADAPT_EXE = f"{args.p}/cutadapt"
