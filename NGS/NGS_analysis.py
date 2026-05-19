@@ -81,6 +81,7 @@ def cutadapt(forward_raw_reads, reverse_raw_reads, forward_adaptor, reverse_adap
 
     # Setup cutadapt commands and flags
     cutadapt_commands = [["cutadapt"] +
+                         ["--rc"] +
                          ["-j", f"{THREADS}"] +
                          [f"-a", f"{forward_adaptor}...{reverse_adaptor}"] +
                          [f"-A", f"{rc(reverse_adaptor)}...{rc(forward_adaptor)}"] +
