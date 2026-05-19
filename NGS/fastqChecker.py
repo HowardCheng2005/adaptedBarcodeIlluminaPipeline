@@ -7,8 +7,10 @@ def analyze_fastq(input_fastq_file, forward_read, reverse_read):
 
     forward_read_id = []
     reverse_read_id = []
+    ambiguous_read_id = []
     total_forward_reads = 0
     total_reverse_reads = 0
+    total_ambiguous_reads = 0
     total_no_reads = 0
 
     with gzip.open(input_fastq_file, "rt") as f:
@@ -16,7 +18,10 @@ def analyze_fastq(input_fastq_file, forward_read, reverse_read):
             id = record.id
             seq = str(record.seq).upper()
 
-            if forward_read.upper() in seq:
+            if forward_read.upper() in seq and reverse_read.upper() in seq:
+                ambiguous_read_id.append(id)
+                total_ambiguous_reads += 1
+            elif forward_read.upper() in seq:
                 forward_read_id.append(id)
                 total_forward_reads += 1
             elif reverse_read.upper() in seq:
@@ -29,8 +34,9 @@ def analyze_fastq(input_fastq_file, forward_read, reverse_read):
     print("total no marker reads:", total_no_reads)
     print("total reads containing forward invariant:", total_forward_reads)
     print("total reads containing reverse complement:", total_reverse_reads)
+    print("total ambiguous reads:", total_ambiguous_reads)
 
-    return forward_read_id, reverse_read_id
+    return forward_read_id, reverse_read_id, ambiguous_read_id
 
 
 
@@ -47,10 +53,13 @@ if __name__ == "__main__":
     forward_marker = args.forward_marker
     reverse_marker = args.reverse_marker
 
-    forward_ids, reverse_ids = analyze_fastq(input_fastq_file, forward_marker, reverse_marker)
+    forward_ids, reverse_ids, ambiguous_ids = analyze_fastq(input_fastq_file, forward_marker, reverse_marker)
 
     with open(os.path.join(output_dir, "forward_ids.txt"), "w") as fw:
         fw.write("\n".join(forward_ids))
 
     with open(os.path.join(output_dir, "reverse_ids.txt"), "w") as fw:
         fw.write("\n".join(reverse_ids))
+
+    with open(os.path.join(output_dir, "ambiguous_ids.txt"), "w") as fw:
+        fw.write("\n".join(ambiguous_ids))
