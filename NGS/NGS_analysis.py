@@ -174,7 +174,7 @@ def quality_filter(merged_reads):
                     for f in merged_reads]
     LOG.info(f"Output files: {filtered_reads}")
 
-    # NGmerge commands.
+    # quality filter commands.
     quality_filter_commands = [["fastp"] +
         ["-w", f"{THREADS}"] +
         ["-i", f"{merged_reads[i]}"] +
@@ -186,7 +186,7 @@ def quality_filter(merged_reads):
         for i in range(len(merged_reads))
     ]
 
-    # Run NGmerge commands.
+    # Run quality filter commands.
     for command in quality_filter_commands:
         LOG.info(f"Running Quality Filter command: {' '.join(command)}")
         try:
