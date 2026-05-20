@@ -11,6 +11,8 @@ def read_converter(read_files, output_file):
 
     with open(output_file, "w") as out:
         for file in read_files:
+
+            print(f"Reading {file}")
             with gzip.open(file, "rt") as f:
                 for record in SeqIO.parse(f, "fastq"):
                     read = str(record.seq)
@@ -19,6 +21,10 @@ def read_converter(read_files, output_file):
                         bartender_read = f"{read},{read_count}\n"
                         out.write(bartender_read)
                         read_count += 1
+
+            print(f"Finished reading {file}")
+            print(f"Wrote {output_file} to {output_file}")
+
     return read_count
 
 if __name__ == '__main__':
