@@ -11,7 +11,7 @@ def barcode_reader(input):
                 continue
 
             parts = line.split()
-            num_barcodes.append(int(parts[0]))
+            num_barcodes.append(round(float(parts[0])))
             barcode_seq.append(parts[1])
 
     return num_barcodes, barcode_seq
