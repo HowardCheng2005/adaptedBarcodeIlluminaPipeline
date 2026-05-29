@@ -22,6 +22,9 @@ def barcode_writer(num_barcodes, barcode_seq, offset, output_file, unique=False)
 
     with open(output_file, 'w') as f:
         for j, barcode in enumerate(barcode_seq):
+            if len(barcode) != 38:
+                continue
+
             if unique:
                 index += 1
                 f.write(f"{barcode},{index}\n")
